@@ -1,0 +1,13 @@
+bases:
+  - ./../../base
+namespace: production
+commonLabels:
+  namespace: production
+patchesStrategicMerge:
+- configmap.yaml
+- deployment.yaml
+- job.yaml
+resources:
+- secret.yaml
+- ingress.yaml
+- namespace.yaml

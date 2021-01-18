@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connexion-app-configmap
+  labels:
+    app: connexion-app
+data:
+  APP_SETTINGS: development

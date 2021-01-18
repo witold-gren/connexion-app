@@ -1,0 +1,8 @@
+commonLabels:
+  app: connexion-app
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - hpa.yaml
+  - job.yaml
+  - service.yaml

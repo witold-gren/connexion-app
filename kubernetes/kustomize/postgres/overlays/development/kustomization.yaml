@@ -1,0 +1,10 @@
+bases:
+  - ./../../base
+namespace: development
+commonLabels:
+  namespace: development
+patchesStrategicMerge:
+- statefulset.yaml
+resources:
+- secret.yaml
+- namespace.yaml

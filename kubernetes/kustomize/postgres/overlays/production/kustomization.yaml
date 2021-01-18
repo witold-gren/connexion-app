@@ -1,0 +1,10 @@
+bases:
+  - ./../../base
+namespace: production
+commonLabels:
+  namespace: production
+patchesStrategicMerge:
+- statefulset.yaml
+resources:
+- secret.yaml
+- namespace.yaml

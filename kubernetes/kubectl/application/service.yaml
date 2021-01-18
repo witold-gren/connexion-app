@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connexion-app-svc
+  namespace: development
+  labels:
+    app: connexion-app
+spec:
+  type: ClusterIP
+  ports:
+   - name: connexion-app
+     port: 5000
+     protocol: TCP
+     targetPort: connexion-tcp
+  selector:
+    app: connexion-app

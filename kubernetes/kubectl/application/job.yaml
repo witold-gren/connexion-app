@@ -1,0 +1,28 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: connexion-app-job
+  namespace: development
+  labels:
+    app: connexion-app
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      containers:
+      - name: migration
+        image: witoldgren/connexion-app:0.1
+        imagePullPolicy: Always
+        args: ["migrate"]
+        envFrom:
+          - configMapRef:
+              name: connexion-app-configmap
+          - secretRef:
+              name: connexion-app-secret
+        env:
+          - name: CHECK_MIGRATION
+            value: "False"
+      restartPolicy: Never

@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-configmap
+  namespace: development
+  labels:
+    app: postgresql
+data:
+  POSTGRES_DB: connexionapp

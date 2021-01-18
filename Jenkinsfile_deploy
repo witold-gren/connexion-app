@@ -1,0 +1,131 @@
+#!/usr/bin/env groovy
+
+jenkinsSlave = "jenkins-slave"
+jenkinsGithubCredentialsId = "GitHubCredentials"
+slackChannel = "#notifications"
+gitHubUrl = "https://github.com/witold-gren/connexion-app-infrastructure"
+
+properties([
+    parameters([
+        string (
+            name: "environment",
+            defaultValue: "",
+            description: "What environment? (K8S Namespace) eg. development|staging|production"
+        ),
+        string (
+            name: "service",
+            defaultValue: "",
+            description: "What service? (TS app name) eg. postgres|application"
+        ),
+        string (
+            name: "version",
+            defaultValue: "",
+            description: "What version? (GitHub commit id or git tag)"
+        ),
+    ])
+])
+
+node(jenkinsSlave) {
+    def success = false;
+    def version = params.version;
+    def environment = params.environment;
+    def service = params.service;
+
+    try {
+        assert environment != null
+        assert service != null
+
+        def deployment_path = "./kubernetes/kustomize/${service}/overlays/${environment}/"
+
+        if (service == 'postgres') {
+            def deployment_file = "${deployment_path}statefulset.yaml"
+        } else {
+            def deployment_file = "${deployment_path}deployment.yaml"
+        }
+
+        stage('Prepare') {
+            cleanWs()
+            git branch: 'master', credentialsId: jenkinsGithubCredentialsId, url: gitHubUrl
+
+            def deployment_data = readYaml file: deployment_file
+            def docker_image = deployment_data.spec.template.spec.containers[0].image
+            def (image, tag) = docker_image.tokenize(':')
+
+            if(version != "") {
+                deployment_data.spec.template.spec.containers[0].image = "${image}:${version}"
+                sh "rm ${deployment_file}"
+                writeYaml file: deployment_file, data: deployment_data
+            } else {
+                version = tag
+            }
+
+            slackSend (
+                channel: slackChannel,
+                color: 'warning',
+                message: [
+                    "[<${env.RUN_DISPLAY_URL}|${env.BUILD_NUMBER}>] ",
+                    "STARTED: Deploying *${service.toUpperCase()}* ",
+                    "on environment *${environment.toUpperCase()}* ",
+                    "with version: *${version}*"
+                ].join("")
+            )
+        }
+
+        stage('Test') {
+            sh "kubectl apply -k ${deployment_path} --dry-run --output yaml"
+        }
+
+        stage('Deploy') {
+            sh """
+                kubectl apply -k ${deployment_path}
+                kubectl wait --for=condition=Ready -l app=${service} pod --timeout=600s --namespace ${environment}
+            """
+            // kubectl rollout status deployment/${service} --timeout=600s --namespace ${environment}
+        }
+
+        stage('Save') {
+            withCredentials([usernamePassword(credentialsId: jenkinsGithubCredentialsId, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]){
+                sh("""
+                    git config --local credential.helper "!f() { echo username=${GIT_USERNAME}; echo password=${GIT_PASSWORD}; }; f"
+                    git add ${deployment_file}
+                    git commit -m "[${env.BUILD_NUMBER}] Deployment ${service.toUpperCase()} on ${environment.toUpperCase()} with version: ${version}" || echo "No git commit needed"
+                    git push origin HEAD:master || echo "No git push needed"
+                """)
+            }
+        }
+        success = true;
+    }
+    catch (e) {
+        exception = e;
+        success = false;
+    }
+
+    stage('Notification') {
+        if (success) {
+            slackSend (
+                channel: slackChannel,
+                color: 'good',
+                message: [
+                    "[<${env.RUN_DISPLAY_URL}|${env.BUILD_NUMBER}>] ",
+                    "SUCCESS: Deployed service *${service.toUpperCase()}* ",
+                    "on environment *${environment.toUpperCase()}* ",
+                    "with version: *${version}* ",
+                    "in kubernetes cluster *pwc.eks.k8s.local*"
+                ].join("")
+            )
+        } else {
+            slackSend (
+                channel: slackChannel,
+                color: 'danger',
+                message: [
+                    "[<${env.RUN_DISPLAY_URL}|${env.BUILD_NUMBER}>] ",
+                    "FAILED: Deployment service *${service.toUpperCase()}* ",
+                    "on environment *${environment.toUpperCase()}* ",
+                    "with version: *${version}* ",
+                    "in kubernetes cluster *pwc.eks.k8s.local*"
+                ].join("")
+            )
+            throw exception
+        }
+    }
+}

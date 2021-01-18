@@ -1,0 +1,19 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: connexion-app-deploy
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: connexion
+        image: witoldgren/connexion-app:0.1
+        resources:
+          requests:
+            memory: "128M"
+            cpu: "250m"
+          limits:
+            memory: "256M"
+            cpu: "500m"

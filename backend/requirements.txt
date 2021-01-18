@@ -1,0 +1,26 @@
+# Python web framework
+Flask==1.1.1
+
+# Python SQL toolki and ORM
+Flask-SQLAlchemy==2.4.1
+
+# Package for migrate and auto import data do DB
+Flask-Migrate==2.5.2
+
+# Very small package which help usage python unittest
+Flask-Testing==0.7.1
+
+# Code coverage
+coverage==5.0.3
+
+# PostgreSQL connection library
+psycopg2==2.8.4
+
+# Environment variable parsing
+environs==7.1.0
+
+# API First framework
+connexion==2.5.1
+
+# Python WSGI HTTP Server
+gunicorn==20.0.4

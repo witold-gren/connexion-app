@@ -1,0 +1,4 @@
+# PostgreSQL
+POSTGRES_DB=backend
+POSTGRES_USER=backend
+POSTGRES_PASSWORD=backend

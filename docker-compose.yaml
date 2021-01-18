@@ -1,0 +1,38 @@
+version: "3.7"
+
+services:
+  db:
+    container_name: db
+    image: postgres:11.6-alpine
+    restart: always
+    env_file:
+      - .envs/.postgres
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - overlay
+  app:
+    container_name: connexion
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    env_file:
+      - .envs/.flask
+      - .envs/.postgres
+    volumes:
+      - ./backend/:/app
+    ports:
+      - 5000:5000
+    networks:
+      - overlay
+    depends_on:
+      - db
+
+networks:
+  overlay:
+    driver: bridge
+
+volumes:
+  db_data:

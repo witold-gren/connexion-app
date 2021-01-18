@@ -1,0 +1,10 @@
+bases:
+  - ./../../base
+namespace: staging
+commonLabels:
+  namespace: staging
+patchesStrategicMerge:
+- statefulset.yaml
+resources:
+- secret.yaml
+- namespace.yaml
